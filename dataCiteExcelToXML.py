@@ -2,16 +2,48 @@
 from lxml import etree as ET
 import lxml.builder
 import csv
-
 import argparse
+import pandas as pd
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-c', '--CSV', help='Enter CSV filename to convert to XML, including extension. Optional - if not provided, the script will ask for input. Example: data.csv')
+parser.add_argument('-e', '--excel', help='Enter Excel filename to convert to CSV, including extension. Optional - if not provided, the script will ask for input. Example: sheets.xlsx')
+parser.add_argument('-c', '--CSV', help="Enter file path with filename where you'd like CSV saved. Optional - if not provided, the script will ask for input. Example: C:\\Users\\User1\\Desktop\\export_dataframe.csv")
 args = parser.parse_args()
+
+if args.excel:
+    excelfile = args.excel
+else:
+    excelfile  = input('Enter Excel filename: ')
 if args.CSV:
     filename = args.CSV
 else:
-    filename = raw_input('Enter CSV filename: ')
+    filename = input('Enter file path: ')
+
+# Create the pd.ExcelFile() object
+xls = pd.ExcelFile(excelfile)
+
+# Extract the sheet names from xls
+sheetNamesList = xls.sheet_names
+sheetNamesList.pop()
+
+# Create an empty list: listings
+listings = []
+
+# Import the data
+for sheetName in sheetNamesList :
+    df = pd.read_excel(xls, sheet_name=sheetName, na_values='n/a')
+    df = df.iloc[1:,:]
+    df.dropna(axis=0, how='all', thresh=None, subset=None, inplace=True)
+    df.dropna(axis=1, how='all', thresh=None, subset=None, inplace=True)
+    #print df
+    listings.append(df)
+
+# Concatenate the listings: listing_data
+listing_data = pd.concat(listings, join ='outer', ignore_index=True, sort=False)
+listing_data.to_csv(filename, index = False, header = True, encoding = 'utf-8')
+print('CSV of data created, saved as {}!'.format(filename))
+print()
+
 
 
 request_list = []
@@ -23,7 +55,9 @@ with open(filename) as nameFile:
             request_list.append(request)
 
 
-
+total_requests = len(request_list)
+print('{} DOI requests found; generating {} XML documents.'.format(total_requests, total_requests))
+print()
 for x in request_list:
     with open(filename) as nameFile:
         datacite_elements = csv.DictReader(nameFile)
@@ -44,9 +78,10 @@ for x in request_list:
         geo_locations_loop = 0
         funding_loop = 0
         geo_polygon = []
+        print('Creating XML document for request with identifier {}.'.format(x))
+        print()
         for element in datacite_elements:
             if x in element['JHED - Request#'].strip():
-                print(x)
                 try:
                     creator_name = element['creatorName'].strip()
                     if creator_name:
@@ -504,6 +539,8 @@ for x in request_list:
 
 
         tree = ET.ElementTree(resource)
-        print(resource)
-        print(tree)
-        tree.write(open('dataCite_'+x+'.xml', 'wb'))
+        xmlfile = 'dataCite_'+x+'.xml'
+        tree.write(open(xmlfile, 'wb'))
+        print('XML document for {} request created, saved as {}.'.format(x, xmlfile))
+        print()
+print('Script finished')
