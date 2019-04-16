@@ -1,4 +1,4 @@
-# datacite
+# DataCite Repository
 
 Python scripts to help researchers submit valid XML documents to DataCite to create DOIs and their metadata.  
 
