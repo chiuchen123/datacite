@@ -7,7 +7,7 @@ import pandas as pd
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--excel', help='Enter Excel filename to convert to CSV, including extension. Optional - if not provided, the script will ask for input. Example: sheets.xlsx')
-parser.add_argument('-c', '--CSV', help="Enter file path with filename where you'd like CSV saved. Optional - if not provided, the script will ask for input. Example: C:\\Users\\User1\\Desktop\\export_dataframe.csv")
+parser.add_argument('-c', '--CSV', help="Enter filename for CSV to be created. Optional - if not provided, the script will ask for input. Example: C:\\Users\\User1\\Desktop\\export_dataframe.csv")
 args = parser.parse_args()
 
 if args.excel:
@@ -17,7 +17,7 @@ else:
 if args.CSV:
     filename = args.CSV
 else:
-    filename = input('Enter file path: ')
+    filename = input('Enter CSV filename: ')
 
 # Create the pd.ExcelFile() object
 xls = pd.ExcelFile(excelfile)
@@ -35,7 +35,6 @@ for sheetName in sheetNamesList :
     df = df.iloc[1:,:]
     df.dropna(axis=0, how='all', thresh=None, subset=None, inplace=True)
     df.dropna(axis=1, how='all', thresh=None, subset=None, inplace=True)
-    #print df
     listings.append(df)
 
 # Concatenate the listings: listing_data
@@ -45,7 +44,7 @@ print('CSV of data created, saved as {}!'.format(filename))
 print()
 
 
-
+# Find all unique requests
 request_list = []
 with open(filename) as nameFile:
     datacite_elements = csv.DictReader(nameFile)
@@ -54,21 +53,21 @@ with open(filename) as nameFile:
         if request not in request_list:
             request_list.append(request)
 
-
+print(request_list)
 total_requests = len(request_list)
 print('{} DOI requests found; generating {} XML documents.'.format(total_requests, total_requests))
 print()
-for x in request_list:
-    with open(filename) as nameFile:
-        datacite_elements = csv.DictReader(nameFile)
+for x in request_list: #for each request identifier in CSV
+    with open(filename) as nameFile: #open CSV
+        datacite_elements = csv.DictReader(nameFile) #read each row as a dictonary
         attr_qname = ET.QName('http://www.w3.org/2001/XMLSchema-instance', 'schemaLocation')
         datacite = 'http://datacite.org/schema/kernel-4'
         xsi = 'http://www.w3.org/2001/XMLSchema-instance'
         nsmap = {None: datacite, 'xsi': xsi}
-        resource = ET.Element('resource', {attr_qname:"http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.1/metadata.xsd"}, nsmap = nsmap)
+        resource = ET.Element('resource', {attr_qname:"http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.2/metadata.xsd"}, nsmap = nsmap)
         identifier = ET.SubElement(resource, 'identifier')
-        identifier.text = '10.5072'
-        identifier.set('identifierType','DOI')
+        identifier.text = ''
+        identifier.set('identifierType', 'DOI')
         name_loop = 0
         subject_loop = 0
         contributor_name_loop = 0
@@ -81,50 +80,32 @@ for x in request_list:
         print('Creating XML document for request with identifier {}.'.format(x))
         print()
         for element in datacite_elements:
-            if x in element['JHED - Request#'].strip():
+            if x in element['JHED - Request#'].strip(): #for each row in CSV where request number is found, map associated element into XML
                 try:
                     creator_name = element['creatorName'].strip()
-                    if creator_name:
+                    name_type = element['nameType'].strip()
+                    if creator_name and name_type:
                         name_loop = name_loop + 1
                         if name_loop == 1:
                             creators = ET.SubElement(resource, 'creators')
                             creator = ET.SubElement(creators, 'creator')
                             creatorName = ET.SubElement(creator, 'creatorName')
                             creatorName.text = creator_name
+                            creatorName.set('nameType', name_type)
                         else:
                             creator = ET.SubElement(creators, 'creator')
                             creatorName = ET.SubElement(creator, 'creatorName')
                             creatorName.text = creator_name
+                            creatorName.set('nameType', name_type)
                 except:
                     pass
                 try:
-                    name_type = element['nameType'].strip()
-                    if name_type == 'organization':
-                        creatorName.set('nameType', name_type)
-                    elif name_type == "personal":
-                        personal_name = creator_name.split(',')
-                        given_name = personal_name[1].strip()
-                        family_name = personal_name[0].strip()
-                        creatorName.set('nameType', name_type)
-                        givenName = ET.SubElement(creator, 'givenName')
-                        familyName = ET.SubElement(creator, 'familyName')
-                        givenName.text = given_name
-                        familyName.text = family_name
-                    else:
-                        pass
-                except:
-                    pass
-                try:
-                    name_identifier = element['Orchid ID'].strip()
-                    if name_identifier:
-                        nameIdentifier = ET.SubElement(creator, 'nameIdentifer')
+                    name_identifier = element['nameIdentifier'].strip()
+                    name_scheme_URI = element['nameIdentifierScheme'].strip()
+                    if name_identifier and name_scheme_URI:
+                        nameIdentifier = ET.SubElement(creator, 'nameIdentifier')
                         nameIdentifier.text = name_identifier
-                except:
-                    pass
-                try:
-                    name_scheme_URI = element['Scheme ID'].strip()
-                    if name_scheme_URI:
-                        nameIdentifier.set('schemeURI', name_scheme_URI)
+                        nameIdentifier.set('nameIdentifierScheme', name_scheme_URI)
                 except:
                     pass
                 try:
@@ -189,75 +170,63 @@ for x in request_list:
                     pass
                 try:
                     contributor_name = element['contributorName'].strip()
-                    if contributor_name:
+                    contributor_type = element['contributorType'].strip()
+                    if contributor_name and contributor_type:
                         contributor_name_loop = contributor_name_loop + 1
                         if contributor_name_loop == 1:
                             contributors = ET.SubElement(resource, 'contributors')
                             contributor = ET.SubElement(contributors, 'contributor')
                             contributorName = ET.SubElement(contributor, 'contributorName')
                             contributorName.text = contributor_name
+                            contributor.set('contributorType', contributor_type)
                         else:
                             contributor = ET.SubElement(contributors, 'contributor')
                             contributorName = ET.SubElement(contributor, 'contributorName')
                             contributorName.text = contributor_name
+                            contributor.set('contributorType', contributor_type)
                 except:
                     pass
                 try:
                     contributor_name_type = element['contributorNameType'].strip()
                     if contributor_name_type:
-                        if contributor_name_type == 'organization':
-                            contributorName.set('nameType', contributor_name_type)
-                        elif contributor_name_type== "personal":
-                            contributor_personal_name = contributor_name.split(',')
-                            contributor_given_name = contributor_personal_name[1].strip()
-                            contributor_family_name = contributor_personal_name[0].strip()
-                            contributorName.set('nameType', contributor_name_type)
-                            contributorGivenName  = ET.SubElement(contributor, 'givenName' )
-                            contributorFamilyName = ET.SubElement(contributor, 'familyName')
-                            contributorGivenName.text = contributor_given_name
-                            contributorFamilyName.text = contributor_family_name
+                        contributorName.set('nameType', contributor_name_type)
                 except:
                     pass
                 try:
                     contributor_name_identifier = element['contributorNameIdentifier'].strip()
-                    if contributor_name_identifier:
-                        contributorNameIdentifier = ET.SubElement(contributor, 'nameIdentifer')
-                        contributorNameIdentifier.text = contributor_name_identifier
-                        contributorNameIdentifier.set('nameIdentifierScheme', 'ORCID')
-                except:
-                    pass
-                try:
-                    contributor_name_scheme_URI = element['contributorSchemeURI'].strip()
                     contributor_identifier_scheme = element['contributorIdentifierScheme'].strip()
-                    if contributor_name_scheme_URI:
-                        contributorNameIdentifier.set('schemeURI', contributor_name_scheme_URI)
+                    if contributor_name_identifier and contributor_identifier_scheme:
+                        contributorNameIdentifier = ET.SubElement(contributor, 'nameIdentifier')
+                        contributorNameIdentifier.text = contributor_name_identifier
                         contributorNameIdentifier.set('nameIdentifierScheme', contributor_identifier_scheme)
                 except:
                     pass
                 try:
-                    conbtributor_organization = element['contributorAffiliation'].strip()
-                    if conbtributor_organization:
-                        contributorAffiliation = ET.SubElement(contributor, 'affiliation')
-                        contributorAffiliation.text = conbtributor_organization
+                    contributor_name_scheme_URI = element['contributorSchemeURI'].strip()
+                    if contributor_name_scheme_URI:
+                        contributorNameIdentifier.set('schemeURI', contributor_name_scheme_URI)
+                except:
+                    pass
+                try:
+                    contributor_affiliation = element['contributorAffiliation']
+                    if contributor_affiliation:
+                        affiliation = ET.SubElement(contributor, 'affiliation')
                 except:
                     pass
                 try:
                     date_csv = element['date'].strip()
-                    if date_csv:
+                    date_type = element['dateType'].strip()
+                    if date_csv and date_type:
                         date_loop = date_loop + 1
                         if date_loop == 1:
                             dates = ET.SubElement(resource, 'dates')
                             date = ET.SubElement(dates, 'date')
                             date.text = date_csv
+                            date.set('dateType', date_type)
                         else:
                             date = ET.SubElement(dates, 'date')
                             date.text = date_csv
-                except:
-                    pass
-                try:
-                    date_type = element['dateType'].strip()
-                    if date_type:
-                        date.set('dateType', date_type)
+                            date.set('dateType', date_type)
                 except:
                     pass
                 try:
@@ -269,14 +238,10 @@ for x in request_list:
                     pass
                 try:
                     resource_type = element['resourceType'].strip()
-                    if resource_type:
+                    resource_type_general = element['generalResourceType'].strip()
+                    if resource_type and resource_type_general:
                         resourceType = ET.SubElement(resource, 'resourceType')
                         resourceType.text = resource_type
-                except:
-                    pass
-                try:
-                    resource_type_general = element['generalResourceType'].strip()
-                    if resource_type_general:
                         resourceType.set('resourceTypeGeneral', resource_type_general)
                 except:
                     pass
@@ -300,29 +265,23 @@ for x in request_list:
                     pass
                 try:
                     related_identifier = element['relatedIdentifier'].strip()
-                    if related_identifier:
+                    related_identifier_type = element['relatedIdentifierType'].strip()
+                    relation_type = element['relationType'].strip()
+                    if related_identifier and related_identifier_type and relation_type:
                         related_loop = related_loop + 1
                         if related_loop == 1:
                             relatedIdentifiers = ET.SubElement(resource, 'relatedIdentifiers')
                             relatedIdentifier = ET.SubElement(relatedIdentifiers, 'relatedIdentifier')
                             relatedIdentifier.text = related_identifier
+                            relatedIdentifier.set('relatedIdentifierType', related_identifier_type)
+                            relatedIdentifier.set('relationType', relation_type)
                         else:
                             relatedIdentifier = ET.SubElement(relatedIdentifiers, 'relatedIdentifier')
                             relatedIdentifier.text = related_identifier
+                            relatedIdentifier.set('relatedIdentifierType', related_identifier_type)
+                            relatedIdentifier.set('relationType', relation_type)
                     else:
                         pass
-                except:
-                    pass
-                try:
-                    related_identifier_type = element['relatedIdentifierType'].strip()
-                    if related_identifier_type:
-                        relatedIdentifier.set('relatedIdentifierType', alternative_identifier_type)
-                except:
-                    pass
-                try:
-                    relation_type = element['relationType'].strip()
-                    if relation_type:
-                        relatedIdentifier.set('relationType', relation_type)
                 except:
                     pass
                 try:
@@ -383,19 +342,25 @@ for x in request_list:
                 try:
                     description_csv = element['description'].strip()
                     description_type = element['descriptionType'].strip()
-                    if description_csv:
+                    if description_csv and description_type:
                         descriptions = ET.SubElement(resource, 'descriptions')
                         description = ET.SubElement(descriptions, 'description')
                         description.set('descriptionType', description_type)
                         description.text = description_csv
                 except:
                     pass
+                geo_location_loop = 0
                 try:
                     geo_location_place = element['geoLocationPlace'].strip()
                     if geo_location_place:
                         geo_locations_loop = geo_locations_loop + 1
+                        geo_location_loop = geo_location_loop + 1
                         if geo_locations_loop == 1:
                             geoLocations = ET.SubElement(resource, 'geoLocations')
+                            geoLocation = ET.SubElement(geoLocations, 'geoLocation')
+                            geoLocationPlace = ET.SubElement(geoLocation, 'geoLocationPlace')
+                            geoLocationPlace.text = geo_location_place
+                        elif geo_location_loop == 1:
                             geoLocation = ET.SubElement(geoLocations, 'geoLocation')
                             geoLocationPlace = ET.SubElement(geoLocation, 'geoLocationPlace')
                             geoLocationPlace.text = geo_location_place
@@ -409,8 +374,16 @@ for x in request_list:
                     point_latitude = element['pointLatitude'].strip()
                     if point_longitude and point_latitude:
                         geo_locations_loop = geo_locations_loop + 1
+                        geo_location_loop = geo_location_loop + 1
                         if geo_locations_loop == 1:
                             geoLocations = ET.SubElement(resource, 'geoLocations')
+                            geoLocation = ET.SubElement(geoLocations, 'geoLocation')
+                            geoLocationPoint = ET.SubElement(geoLocation, 'geoLocationPoint')
+                            geoPointLongitude = ET.SubElement(geoLocationPoint , 'pointLongitude')
+                            geoPointLatitude = ET.SubElement(geoLocationPoint , 'pointLatitude')
+                            geoPointLongitude.text =  point_longitude
+                            geoPointLatitude.text = point_latitude
+                        elif geo_location_loop == 1:
                             geoLocation = ET.SubElement(geoLocations, 'geoLocation')
                             geoLocationPoint = ET.SubElement(geoLocation, 'geoLocationPoint')
                             geoPointLongitude = ET.SubElement(geoLocationPoint , 'pointLongitude')
@@ -432,8 +405,20 @@ for x in request_list:
                     northbound_latitude = element['northBoundLatitude'].strip()
                     if westbound_longitude and eastbound_longitude and southbound_latitude and northbound_latitude:
                         geo_locations_loop = geo_locations_loop + 1
+                        geo_location_loop = geo_location_loop + 1
                         if geo_locations_loop == 1:
                             geoLocations = ET.SubElement(resource, 'geoLocations')
+                            geoLocation = ET.SubElement(geoLocations, 'geoLocation')
+                            geoLocationBox = ET.SubElement(geoLocation, 'geoLocationBox')
+                            westBoundLongitude = ET.SubElement(geoLocationBox,'westBoundLongitude')
+                            eastBoundLongitude = ET.SubElement(geoLocationBox, 'eastBoundLongitude')
+                            southBoundLatitude = ET.SubElement(geoLocationBox, 'southBoundLatitude')
+                            northBoundLatitude = ET.SubElement(geoLocationBox, 'northBoundLatitude')
+                            westBoundLongitude.text = westbound_longitude
+                            eastBoundLongitude.text = eastbound_longitude
+                            southBoundLatitude.text = southbound_latitude
+                            northBoundLatitude.text = northbound_latitude
+                        elif geo_location_loop == 1:
                             geoLocation = ET.SubElement(geoLocations, 'geoLocation')
                             geoLocationBox = ET.SubElement(geoLocation, 'geoLocationBox')
                             westBoundLongitude = ET.SubElement(geoLocationBox,'westBoundLongitude')
@@ -462,8 +447,18 @@ for x in request_list:
                     geo_location_polygon = element['geoLocationPolygon'].strip()
                     if geo_location_polygon:
                         geo_locations_loop = geo_locations_loop + 1
+                        geo_location_loop = geo_location_loop + 1
                         if geo_location_polygon not in geo_polygon and geo_locations_loop == 1:
                             geoLocations = ET.SubElement(resource, 'geoLocations')
+                            geoLocation = ET.SubElement(geoLocations, 'geoLocation')
+                            geoLocationPolygon = ET.SubElement(geoLocation, 'geoLocationPolygon')
+                            polygonPoint = ET.SubElement(geoLocationPolygon, 'polygonPoint')
+                            polyPointLongitude = ET.SubElement(polygonPoint, 'pointLongitude')
+                            polyPointLatitude = ET.SubElement(polygonPoint, 'pointLatitude')
+                            polyPointLongitude.text = polygon_long
+                            polyPointLatitude.text = polygon_lat
+                            geo_polygon.append(geo_location_polygon)
+                        elif geo_location_polygon not in geo_polygon and geo_location_loop == 1:
                             geoLocation = ET.SubElement(geoLocations, 'geoLocation')
                             geoLocationPolygon = ET.SubElement(geoLocation, 'geoLocationPolygon')
                             polygonPoint = ET.SubElement(geoLocationPolygon, 'polygonPoint')
@@ -487,7 +482,7 @@ for x in request_list:
                             polyPointLongitude.text = polygon_long
                             polyPointLatitude.text = polygon_lat
                         else:
-                            print(no)
+                            print('error!')
                 except:
                     pass
                 try:
@@ -508,7 +503,7 @@ for x in request_list:
                 try:
                     funder_identifier = element['funderIdentifier'].strip()
                     funder_identifier_type = element['funderIdentifierType'].strip()
-                    if funder_identifier:
+                    if funder_identifier and funder_identifier_type:
                         funderIdentifier = ET.SubElement(fundingReference, 'funderIdentifier')
                         funderIdentifier.text = funder_identifier
                         funderIdentifier.set('funderIdentifierType', funder_identifier_type)
@@ -531,7 +526,7 @@ for x in request_list:
                 try:
                     award_uri = element['awardURI'].strip()
                     if award_uri:
-                        awardTitle.set('awardURI', award_uri)
+                        awardNumber.set('awardURI', award_uri)
                 except:
                     pass
             else:
@@ -540,7 +535,8 @@ for x in request_list:
 
         tree = ET.ElementTree(resource)
         xmlfile = 'dataCite_'+x+'.xml'
-        tree.write(open(xmlfile, 'wb'))
+        ET.tostring(tree, encoding = 'utf-8') #encodes characters properly
+        tree.write(open(xmlfile, 'wb')) #Creates XML document
         print('XML document for {} request created, saved as {}.'.format(x, xmlfile))
-        print()
+        print('')
 print('Script finished')

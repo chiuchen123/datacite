@@ -56,3 +56,9 @@ local/*
 *.xml
 *.xslx
 figuringout.py
+
+!dataCite_example-complexvalues.xml
+!dataCite_example-datapaper.xml
+!dataCite_example-full.xml
+!dataCite_example-geobox.xml
+!dataCite_example-software.xml
