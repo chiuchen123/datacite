@@ -54,7 +54,7 @@ data/*
 *.json
 local/*
 *.xml
-*.xslx
+*.xlsx
 figuringout.py
 
 !dataCite_example-complexvalues.xml
