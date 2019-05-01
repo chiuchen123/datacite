@@ -10,7 +10,7 @@ The script first combines metadata in the Excel sheets into an easily-readable C
 The script then creates one or many XML documents from the CSV based on the request number  field, using the [lxml](https://lxml.de/index.html) package and [CSV module](https://docs.python.org/3/library/csv.html#module-csv). Each unique request number creates a corresponding XML document. The XML documents are formed to adhere to the [DataCite Metadata Schema 4.2](https://schema.datacite.org/) and are named based on request number.
 
 #### Documents needed:
-* Completed Excel workbook based on [this template]()
+* Completed Excel workbook based on [this template](https://github.com/mjanowiecki/datacite/blob/master/metadataExamples.xlsx)
 
 #### Documents created:
 * One CSV document with all data from completed Excel workbook
