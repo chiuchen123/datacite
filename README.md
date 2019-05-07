@@ -15,3 +15,4 @@ The script then creates one or many XML documents from the CSV based on the requ
 #### Documents created:
 * One CSV document with all data from completed Excel workbook
 * One or many XML documents
+* Log file with terminal & error messages
