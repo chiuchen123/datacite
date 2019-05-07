@@ -52,6 +52,7 @@ data/*
 .profile
 *.csv
 *.json
+*.txt
 local/*
 *.xml
 *.xlsx

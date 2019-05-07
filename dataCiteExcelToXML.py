@@ -4,6 +4,7 @@ import lxml.builder
 import csv
 import argparse
 import pandas as pd
+from datetime import datetime
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--excel', help='Enter Excel filename to convert to CSV, including extension. Optional - if not provided, the script will ask for input. Example: sheets.xlsx')
@@ -37,28 +38,34 @@ for sheetName in sheetNamesList :
     df.dropna(axis=1, how='all', thresh=None, subset=None, inplace=True)
     listings.append(df)
 
+excelfile_edited = excelfile[:-5] #createlog
+f = (open('log_'+excelfile_edited+'_'+datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'.txt', 'a'))
+
 # Concatenate the listings: listing_data
 listing_data = pd.concat(listings, join ='outer', ignore_index=True, sort=False)
-listing_data.to_csv(filename, index = False, header = True, encoding = 'utf-8')
-print('CSV of data created, saved as {}!'.format(filename))
+listing_data.to_csv(filename, index = False, header = True, encoding='utf-8')
+print('CSV of data created, saved as {}!'.format(filename), file=f)
 print()
 
 
 # Find all unique requests
 request_list = []
-with open(filename) as nameFile:
+with open(filename, encoding='utf-8') as nameFile:
     datacite_elements = csv.DictReader(nameFile)
     for element in datacite_elements:
         request = element['JHED - Request#'].strip()
-        if request not in request_list:
-            request_list.append(request)
+        if request:
+            if request not in request_list:
+                request_list.append(request)
+        elif not request:
+            print('ERROR! Your workbook has a row with a blank identifier.', file=f)
 
-print(request_list)
+
 total_requests = len(request_list)
-print('{} DOI requests found; generating {} XML documents.'.format(total_requests, total_requests))
-print()
+print('{} DOI requests found: {}; generating {} XML documents.'.format(total_requests, request_list, total_requests), file=f)
+print('', file=f)
 for x in request_list: #for each request identifier in CSV
-    with open(filename) as nameFile: #open CSV
+    with open(filename, encoding='utf-8') as nameFile: #open CSV
         datacite_elements = csv.DictReader(nameFile) #read each row as a dictonary
         attr_qname = ET.QName('http://www.w3.org/2001/XMLSchema-instance', 'schemaLocation')
         datacite = 'http://datacite.org/schema/kernel-4'
@@ -77,8 +84,7 @@ for x in request_list: #for each request identifier in CSV
         geo_locations_loop = 0
         funding_loop = 0
         geo_polygon = []
-        print('Creating XML document for request with identifier {}.'.format(x))
-        print()
+        print('Creating XML document for request with identifier "{}".'.format(x), file=f)
         for element in datacite_elements:
             if x in element['JHED - Request#'].strip(): #for each row in CSV where request number is found, map associated element into XML
                 try:
@@ -97,6 +103,10 @@ for x in request_list: #for each request identifier in CSV
                             creatorName = ET.SubElement(creator, 'creatorName')
                             creatorName.text = creator_name
                             creatorName.set('nameType', name_type)
+                    elif creator_name:
+                        print('ERROR! name "{}" requires a nameType.'.format(creator_name), file=f)
+                    elif name_type:
+                        print('ERROR! nameType "{}" requires a name.'.format(name_type), file=f)
                 except:
                     pass
                 try:
@@ -106,6 +116,10 @@ for x in request_list: #for each request identifier in CSV
                         nameIdentifier = ET.SubElement(creator, 'nameIdentifier')
                         nameIdentifier.text = name_identifier
                         nameIdentifier.set('nameIdentifierScheme', name_scheme_URI)
+                    elif name_identifier:
+                        print('ERROR! nameIdentifier "{}" requires a nameIdentifierScheme.'.format(name_identifier), file=f)
+                    elif name_scheme_URI:
+                        print('ERROR! nameIdentifierScheme "{}" requires a nameIdentifier.'.format(name_scheme_URI), file=f)
                 except:
                     pass
                 try:
@@ -184,6 +198,10 @@ for x in request_list: #for each request identifier in CSV
                             contributorName = ET.SubElement(contributor, 'contributorName')
                             contributorName.text = contributor_name
                             contributor.set('contributorType', contributor_type)
+                    elif contributor_name:
+                        print('ERROR! contributorName "{}" requires a contributorType.'.format(contributor_name), file=f)
+                    elif contributor_type:
+                        print('ERROR! contributorType "{}" requires a contributorName.'.format(contributor_type), file=f)
                 except:
                     pass
                 try:
@@ -199,6 +217,10 @@ for x in request_list: #for each request identifier in CSV
                         contributorNameIdentifier = ET.SubElement(contributor, 'nameIdentifier')
                         contributorNameIdentifier.text = contributor_name_identifier
                         contributorNameIdentifier.set('nameIdentifierScheme', contributor_identifier_scheme)
+                    elif contributor_name_identifier:
+                        print('ERROR! contributorNameIdentifier "{}" requires a contributorIdentifierScheme.'.format(contributor_name_identifier), file=f)
+                    elif contributor_identifier_scheme:
+                        print('ERROR! contributorIdentifierScheme "{}" requires a contributorNameIdentifier.'.format(contributor_identifier_scheme), file=f)
                 except:
                     pass
                 try:
@@ -227,6 +249,10 @@ for x in request_list: #for each request identifier in CSV
                             date = ET.SubElement(dates, 'date')
                             date.text = date_csv
                             date.set('dateType', date_type)
+                    elif date_csv:
+                        print('ERROR! Date "{}" requires a dateType'.format(date_csv), file=f)
+                    elif date_type:
+                        print('ERROR! DateType "{}" requires a date'.format(date_type), file=f)
                 except:
                     pass
                 try:
@@ -243,6 +269,11 @@ for x in request_list: #for each request identifier in CSV
                         resourceType = ET.SubElement(resource, 'resourceType')
                         resourceType.text = resource_type
                         resourceType.set('resourceTypeGeneral', resource_type_general)
+                    elif resource_type:
+                        print('ERROR! resourceType "{}" requires a generalResourceType'.format(resource_type), file=f)
+                    elif resource_type_general:
+                        print('ERROR! resourceTypeGeneral "{}" requires a resouceType'.format(resource_type_general), file=f)
+
                 except:
                     pass
                 try:
@@ -259,6 +290,10 @@ for x in request_list: #for each request identifier in CSV
                             alternativeIdentifier = ET.SubElement(alternativeIdentifiers, 'alternativeIdentifier')
                             alternativeIdentifier.text = alternative_identifier
                             alternativeIdentifier.set('alternativeIdentifierType', alternative_identifier_type)
+                    elif alternative_identifier:
+                        print('ERROR! alternativeIdentifier "{}" requires an alternativeIdentifierType'.format(alternative_identifier), file=f)
+                    elif alternative_identifier_type:
+                        print('ERROR! alternativeIdentifierType "{}" requires an alternativeIdentifier'.format(alternative_identifier_type), file=f)
                     else:
                         pass
                 except:
@@ -280,6 +315,12 @@ for x in request_list: #for each request identifier in CSV
                             relatedIdentifier.text = related_identifier
                             relatedIdentifier.set('relatedIdentifierType', related_identifier_type)
                             relatedIdentifier.set('relationType', relation_type)
+                    elif related_identifier or (related_identifier and related_identifier_type) or (related_identifier and relation_type):
+                        print('ERROR! relatedIdentifier "{}" requires a relatedIdentifierType and a relationType'.format(related_identifier), file=f)
+                    elif related_identifier_type or (related_identifier_type and relation_type):
+                        print('ERROR! relatedIdentifierType "{}" requires an relatedIdentifier and a relationType'.format(related_identifier_type), file=f)
+                    elif relation_type:
+                        print('ERROR! relationType "{}" requires an relatedIdentifier and a relatedIdentifierType'.format(relation_type), file=f)
                     else:
                         pass
                 except:
@@ -347,6 +388,10 @@ for x in request_list: #for each request identifier in CSV
                         description = ET.SubElement(descriptions, 'description')
                         description.set('descriptionType', description_type)
                         description.text = description_csv
+                    elif description_csv:
+                        print('ERROR! description "{}" requires a descriptionType.'.format(description_csv), file=f)
+                    elif description_type :
+                        print('ERROR! descriptionType "{}" requires a description.'.format(description_type), file=f)
                 except:
                     pass
                 geo_location_loop = 0
@@ -396,6 +441,8 @@ for x in request_list: #for each request identifier in CSV
                             geoPointLatitude = ET.SubElement(geoLocationPoint , 'pointLatitude')
                             geoPointLongitude.text =  point_longitude
                             geoPointLatitude.text = point_latitude
+                    elif point_latitude or point_longitude:
+                        print('ERROR! geoLocationPoint requires both pointLongitude and pointLatitude.', file=f)
                 except:
                     pass
                 try:
@@ -439,6 +486,8 @@ for x in request_list: #for each request identifier in CSV
                             eastBoundLongitude.text = eastbound_longitude
                             southBoundLatitude.text = southbound_latitude
                             northBoundLatitude.text = northbound_latitude
+                    elif westbound_longitude or eastbound_longitude or southbound_latitude or northbound_latitude:
+                        print('ERROR! One or more points from your geobox is missing.', file=f)
                 except:
                     pass
                 try:
@@ -507,6 +556,10 @@ for x in request_list: #for each request identifier in CSV
                         funderIdentifier = ET.SubElement(fundingReference, 'funderIdentifier')
                         funderIdentifier.text = funder_identifier
                         funderIdentifier.set('funderIdentifierType', funder_identifier_type)
+                    elif funder_identifier:
+                        print('ERROR! funderIdentifier "{}" requires a funderIdentifierType.'.format(funder_identifier), file=f)
+                    elif funder_identifier_type:
+                        print('ERROR! funderIdentifierType "{}" requires a funderIdentifier.'.format(funder_identifier_type), file=f)
                 except:
                     pass
                 try:
@@ -533,10 +586,28 @@ for x in request_list: #for each request identifier in CSV
                 pass
 
 
+        required_list = set(['titles', 'creators', 'publisher', 'publicationYear', 'resourceType'])
+        list_elements = set()
+        for child in resource.iter():
+            child = child.tag
+            list_elements.add(child)
+        missing_elements = required_list.difference(list_elements)
+        if missing_elements is not None:
+            for missing in missing_elements:
+                print(('"{}" is missing required element "{}".'.format(x, missing)), file=f)
+
+
         tree = ET.ElementTree(resource)
         xmlfile = 'dataCite_'+x+'.xml'
         ET.tostring(tree, encoding = 'utf-8') #encodes characters properly
         tree.write(open(xmlfile, 'wb')) #Creates XML document
-        print('XML document for {} request created, saved as {}.'.format(x, xmlfile))
-        print('')
+        print('XML document for ""{}" request created, saved as "{}".'.format(x, xmlfile), file=f)
+        print('', file=f)
+
+
+f.close() #print log to terminal
+name = f.name
+log = open(name)
+log = log.read()
+print(log)
 print('Script finished')
