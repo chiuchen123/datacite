@@ -9,11 +9,11 @@ args = parser.parse_args()
 if args.file:
     filename = args.file
 else:
-    filename = raw_input('Enter Excel filename: ')
+    filename = input('Enter Excel filename: ')
 if args.save:
     filepath = args.save
 else:
-    filepath = raw_input('Enter file path: ')
+    filepath = input('Enter file path: ')
 
 # Create the pd.ExcelFile() object
 xls = pd.ExcelFile(filename)
@@ -27,14 +27,14 @@ print(sheetNamesList)
 listings = []
 
 # Import the data
-for sheetName in sheetNamesList :
+for sheetName in sheetNamesList:
     df = pd.read_excel(xls, sheet_name=sheetName, na_values='n/a')
-    df = df.iloc[1:,:]
+    df = df.iloc[1:, :]
     df.dropna(axis=0, how='all', thresh=None, subset=None, inplace=True)
     df.dropna(axis=1, how='all', thresh=None, subset=None, inplace=True)
-    #print df
+    # print df
     listings.append(df)
 
 # Concatenate the listings: listing_data
-listing_data = pd.concat(listings, join ='outer', ignore_index=True, sort=False)
-listing_data.to_csv(filepath, index = False, header = True, encoding = 'utf-8')
+listing_data = pd.concat(listings, join='outer', ignore_index=True, sort=False)
+listing_data.to_csv(filepath, index=False, header=True, encoding='utf-8')
