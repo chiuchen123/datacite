@@ -14,7 +14,7 @@ args = parser.parse_args()
 if args.excel:
     excelfile = args.excel
 else:
-    excelfile  = input('Enter Excel filename: ')
+    excelfile = input('Enter Excel filename: ')
 if args.CSV:
     filename = args.CSV
 else:
@@ -31,19 +31,19 @@ sheetNamesList.pop()
 listings = []
 
 # Import the data
-for sheetName in sheetNamesList :
+for sheetName in sheetNamesList:
     df = pd.read_excel(xls, sheet_name=sheetName, na_values='n/a')
-    df = df.iloc[1:,:]
+    df = df.iloc[1:, :]
     df.dropna(axis=0, how='all', thresh=None, subset=None, inplace=True)
     df.dropna(axis=1, how='all', thresh=None, subset=None, inplace=True)
     listings.append(df)
 
-excelfile_edited = excelfile[:-5] #createlog
+excelfile_edited = excelfile[:-5]  # createlog
 f = (open('log_'+excelfile_edited+'_'+datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'.txt', 'a'))
 
 # Concatenate the listings: listing_data
-listing_data = pd.concat(listings, join ='outer', ignore_index=True, sort=False)
-listing_data.to_csv(filename, index = False, header = True, encoding='utf-8')
+listing_data = pd.concat(listings, join='outer', ignore_index=True, sort=False)
+listing_data.to_csv(filename, index=False, header=True, encoding='utf-8')
 print('CSV of data created, saved as {}!'.format(filename), file=f)
 print()
 
@@ -64,14 +64,14 @@ with open(filename, encoding='utf-8') as nameFile:
 total_requests = len(request_list)
 print('{} DOI requests found: {}; generating {} XML documents.'.format(total_requests, request_list, total_requests), file=f)
 print('', file=f)
-for x in request_list: #for each request identifier in CSV
-    with open(filename, encoding='utf-8') as nameFile: #open CSV
-        datacite_elements = csv.DictReader(nameFile) #read each row as a dictonary
+for x in request_list:   # for each request identifier in CSV
+    with open(filename, encoding='utf-8') as nameFile:  # open CSV
+        datacite_elements = csv.DictReader(nameFile)  # read each row as a dictonary
         attr_qname = ET.QName('http://www.w3.org/2001/XMLSchema-instance', 'schemaLocation')
         datacite = 'http://datacite.org/schema/kernel-4'
         xsi = 'http://www.w3.org/2001/XMLSchema-instance'
         nsmap = {None: datacite, 'xsi': xsi}
-        resource = ET.Element('resource', {attr_qname:"http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.2/metadata.xsd"}, nsmap = nsmap)
+        resource = ET.Element('resource', {attr_qname: "http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.2/metadata.xsd"}, nsmap=nsmap)
         identifier = ET.SubElement(resource, 'identifier')
         identifier.text = ''
         identifier.set('identifierType', 'DOI')
@@ -86,7 +86,7 @@ for x in request_list: #for each request identifier in CSV
         geo_polygon = []
         print('Creating XML document for request with identifier "{}".'.format(x), file=f)
         for element in datacite_elements:
-            if x in element['JHED - Request#'].strip(): #for each row in CSV where request number is found, map associated element into XML
+            if x in element['JHED - Request#'].strip():  # for each row in CSV where request number is found, map associated element into XML
                 try:
                     creator_name = element['creatorName'].strip()
                     name_type = element['nameType'].strip()
@@ -147,7 +147,7 @@ for x in request_list: #for each request identifier in CSV
                 try:
                     publication_year = element['publicationYear'].strip()
                     if publication_year:
-                        publicationYear = ET.SubElement(resource,'publicationYear')
+                        publicationYear = ET.SubElement(resource, 'publicationYear')
                         publicationYear.text = publication_year
                 except:
                     pass
@@ -390,7 +390,7 @@ for x in request_list: #for each request identifier in CSV
                         description.text = description_csv
                     elif description_csv:
                         print('ERROR! description "{}" requires a descriptionType.'.format(description_csv), file=f)
-                    elif description_type :
+                    elif description_type:
                         print('ERROR! descriptionType "{}" requires a description.'.format(description_type), file=f)
                 except:
                     pass
@@ -424,22 +424,22 @@ for x in request_list: #for each request identifier in CSV
                             geoLocations = ET.SubElement(resource, 'geoLocations')
                             geoLocation = ET.SubElement(geoLocations, 'geoLocation')
                             geoLocationPoint = ET.SubElement(geoLocation, 'geoLocationPoint')
-                            geoPointLongitude = ET.SubElement(geoLocationPoint , 'pointLongitude')
-                            geoPointLatitude = ET.SubElement(geoLocationPoint , 'pointLatitude')
-                            geoPointLongitude.text =  point_longitude
+                            geoPointLongitude = ET.SubElement(geoLocationPoint, 'pointLongitude')
+                            geoPointLatitude = ET.SubElement(geoLocationPoint, 'pointLatitude')
+                            geoPointLongitude.text = point_longitude
                             geoPointLatitude.text = point_latitude
                         elif geo_location_loop == 1:
                             geoLocation = ET.SubElement(geoLocations, 'geoLocation')
                             geoLocationPoint = ET.SubElement(geoLocation, 'geoLocationPoint')
-                            geoPointLongitude = ET.SubElement(geoLocationPoint , 'pointLongitude')
-                            geoPointLatitude = ET.SubElement(geoLocationPoint , 'pointLatitude')
-                            geoPointLongitude.text =  point_longitude
+                            geoPointLongitude = ET.SubElement(geoLocationPoint, 'pointLongitude')
+                            geoPointLatitude = ET.SubElement(geoLocationPoint, 'pointLatitude')
+                            geoPointLongitude.text = point_longitude
                             geoPointLatitude.text = point_latitude
                         else:
                             geoLocationPoint = ET.SubElement(geoLocation, 'geoLocationPoint')
-                            geoPointLongitude = ET.SubElement(geoLocationPoint , 'pointLongitude')
-                            geoPointLatitude = ET.SubElement(geoLocationPoint , 'pointLatitude')
-                            geoPointLongitude.text =  point_longitude
+                            geoPointLongitude = ET.SubElement(geoLocationPoint, 'pointLongitude')
+                            geoPointLatitude = ET.SubElement(geoLocationPoint, 'pointLatitude')
+                            geoPointLongitude.text = point_longitude
                             geoPointLatitude.text = point_latitude
                     elif point_latitude or point_longitude:
                         print('ERROR! geoLocationPoint requires both pointLongitude and pointLatitude.', file=f)
@@ -457,7 +457,7 @@ for x in request_list: #for each request identifier in CSV
                             geoLocations = ET.SubElement(resource, 'geoLocations')
                             geoLocation = ET.SubElement(geoLocations, 'geoLocation')
                             geoLocationBox = ET.SubElement(geoLocation, 'geoLocationBox')
-                            westBoundLongitude = ET.SubElement(geoLocationBox,'westBoundLongitude')
+                            westBoundLongitude = ET.SubElement(geoLocationBox, 'westBoundLongitude')
                             eastBoundLongitude = ET.SubElement(geoLocationBox, 'eastBoundLongitude')
                             southBoundLatitude = ET.SubElement(geoLocationBox, 'southBoundLatitude')
                             northBoundLatitude = ET.SubElement(geoLocationBox, 'northBoundLatitude')
@@ -468,7 +468,7 @@ for x in request_list: #for each request identifier in CSV
                         elif geo_location_loop == 1:
                             geoLocation = ET.SubElement(geoLocations, 'geoLocation')
                             geoLocationBox = ET.SubElement(geoLocation, 'geoLocationBox')
-                            westBoundLongitude = ET.SubElement(geoLocationBox,'westBoundLongitude')
+                            westBoundLongitude = ET.SubElement(geoLocationBox, 'westBoundLongitude')
                             eastBoundLongitude = ET.SubElement(geoLocationBox, 'eastBoundLongitude')
                             southBoundLatitude = ET.SubElement(geoLocationBox, 'southBoundLatitude')
                             northBoundLatitude = ET.SubElement(geoLocationBox, 'northBoundLatitude')
@@ -478,7 +478,7 @@ for x in request_list: #for each request identifier in CSV
                             northBoundLatitude.text = northbound_latitude
                         else:
                             geoLocationBox = ET.SubElement(geoLocation, 'geoLocationBox')
-                            westBoundLongitude = ET.SubElement(geoLocationBox,'westBoundLongitude')
+                            westBoundLongitude = ET.SubElement(geoLocationBox, 'westBoundLongitude')
                             eastBoundLongitude = ET.SubElement(geoLocationBox, 'eastBoundLongitude')
                             southBoundLatitude = ET.SubElement(geoLocationBox, 'southBoundLatitude')
                             northBoundLatitude = ET.SubElement(geoLocationBox, 'northBoundLatitude')
@@ -492,7 +492,7 @@ for x in request_list: #for each request identifier in CSV
                     pass
                 try:
                     polygon_long = element['polyPointLongitude']
-                    polygon_lat = element ['polyPointLatitude']
+                    polygon_lat = element['polyPointLatitude']
                     geo_location_polygon = element['geoLocationPolygon'].strip()
                     if geo_location_polygon:
                         geo_locations_loop = geo_locations_loop + 1
@@ -585,7 +585,6 @@ for x in request_list: #for each request identifier in CSV
             else:
                 pass
 
-
         required_list = set(['titles', 'creators', 'publisher', 'publicationYear', 'resourceType'])
         list_elements = set()
         for child in resource.iter():
@@ -596,16 +595,15 @@ for x in request_list: #for each request identifier in CSV
             for missing in missing_elements:
                 print(('"{}" is missing required element "{}".'.format(x, missing)), file=f)
 
-
         tree = ET.ElementTree(resource)
         xmlfile = 'dataCite_'+x+'.xml'
-        ET.tostring(tree, encoding = 'utf-8') #encodes characters properly
-        tree.write(open(xmlfile, 'wb')) #Creates XML document
+        ET.tostring(tree, encoding='utf-8')  # encodes characters properly
+        tree.write(open(xmlfile, 'wb'))  # Creates XML document
         print('XML document for ""{}" request created, saved as "{}".'.format(x, xmlfile), file=f)
         print('', file=f)
 
 
-f.close() #print log to terminal
+f.close()  # print log to terminal
 name = f.name
 log = open(name)
 log = log.read()
