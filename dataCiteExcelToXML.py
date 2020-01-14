@@ -1,6 +1,5 @@
 
 from lxml import etree as ET
-import lxml.builder
 import csv
 import argparse
 import pandas as pd
