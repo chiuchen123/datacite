@@ -33,8 +33,8 @@ listings = []
 for sheetName in sheetNamesList:
     df = pd.read_excel(xls, sheet_name=sheetName, na_values='n/a')
     df = df.iloc[1:, :]
-    df.dropna(axis=0, how='all', thresh=None, subset=None, inplace=True)
-    df.dropna(axis=1, how='all', thresh=None, subset=None, inplace=True)
+    df.dropna(axis=0, how='all', subset=None, inplace=True)
+    df.dropna(axis=1, how='all', subset=None, inplace=True)
     listings.append(df)
 
 excelfile_edited = excelfile[:-5]  # createlog
